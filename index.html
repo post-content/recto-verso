@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RECTO / VERSO</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #1a1410;
+    --paper: #f5f0e8;
+    --stamp: #b84c2c;
+    --rule: #c8b89a;
+    --muted: #8a7a68;
+  }
+
+  body {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Courier Prime', monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(48px, 8vw, 96px);
+    letter-spacing: 0.15em;
+    color: var(--paper);
+    line-height: 1;
+  }
+
+  header h1 span {
+    color: var(--stamp);
+  }
+
+  header p {
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  .workspace {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    width: 100%;
+    max-width: 900px;
+    margin-bottom: 32px;
+  }
+
+  .drop-zone {
+    border: 2px dashed var(--rule);
+    background: rgba(245, 240, 232, 0.03);
+    aspect-ratio: 3/2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .drop-zone:hover {
+    border-color: var(--paper);
+    background: rgba(245, 240, 232, 0.06);
+  }
+
+  .drop-zone.has-image {
+    border-style: solid;
+    border-color: var(--stamp);
+  }
+
+  .drop-zone img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .drop-zone .label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 0.2em;
+    color: var(--muted);
+    z-index: 1;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .drop-zone.has-image .label {
+    opacity: 0;
+  }
+
+  .drop-zone .sublabel {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    margin-top: 8px;
+    text-transform: uppercase;
+    z-index: 1;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .drop-zone.has-image .sublabel {
+    opacity: 0;
+  }
+
+  .drop-zone .tag {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(184, 76, 44, 0.85);
+    color: var(--paper);
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.2em;
+    font-size: 13px;
+    text-align: center;
+    padding: 4px 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 2;
+  }
+
+  .drop-zone.has-image:hover .tag {
+    opacity: 1;
+  }
+
+  input[type="file"] { display: none; }
+
+  .controls {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .control-group label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .control-group select {
+    background: transparent;
+    border: 1px solid var(--rule);
+    color: var(--paper);
+    font-family: 'Courier Prime', monospace;
+    font-size: 13px;
+    padding: 6px 10px;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 28px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a7a68'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+  }
+
+  .control-group select option {
+    background: #1a1410;
+  }
+
+  button.compose {
+    background: var(--stamp);
+    color: var(--paper);
+    border: none;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 0.2em;
+    padding: 14px 40px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-top: 16px;
+  }
+
+  button.compose:hover:not(:disabled) {
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  button.compose:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  .preview-area {
+    width: 100%;
+    max-width: 900px;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .preview-area.visible {
+    display: flex;
+  }
+
+  .preview-label {
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .preview-img {
+    width: 100%;
+    max-width: 900px;
+    border: 1px solid var(--rule);
+    display: block;
+  }
+
+  .download-btn {
+    background: transparent;
+    border: 2px solid var(--paper);
+    color: var(--paper);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 0.2em;
+    padding: 12px 36px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .download-btn:hover {
+    background: var(--paper);
+    color: var(--ink);
+  }
+
+  .divider {
+    width: 1px;
+    height: 40px;
+    background: var(--rule);
+    align-self: center;
+  }
+
+  @media (max-width: 600px) {
+    .workspace { grid-template-columns: 1fr; }
+    .divider { width: 40px; height: 1px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>RECTO <span>/</span> VERSO</h1>
+  <p>Postcard sheet composer</p>
+</header>
+
+<div class="workspace">
+  <div>
+    <div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#8a7a68;margin-bottom:10px;">① Recto — Front</div>
+    <div class="drop-zone" id="drop-recto" onclick="document.getElementById('file-recto').click()">
+      <div class="label">RECTO</div>
+      <div class="sublabel">Click or drop image</div>
+      <div class="tag">Click to replace</div>
+    </div>
+    <input type="file" id="file-recto" accept="image/*">
+  </div>
+
+  <div>
+    <div style="font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:#8a7a68;margin-bottom:10px;">② Verso — Back</div>
+    <div class="drop-zone" id="drop-verso" onclick="document.getElementById('file-verso').click()">
+      <div class="label">VERSO</div>
+      <div class="sublabel">Click or drop image</div>
+      <div class="tag">Click to replace</div>
+    </div>
+    <input type="file" id="file-verso" accept="image/*">
+  </div>
+</div>
+
+<div class="controls">
+  <div class="control-group">
+    <label>Layout</label>
+    <select id="layout">
+      <option value="horizontal">Side by side (horizontal)</option>
+      <option value="vertical">Stacked (vertical)</option>
+    </select>
+  </div>
+  <div class="divider"></div>
+  <div class="control-group">
+    <label>Gap (px)</label>
+    <select id="gap">
+      <option value="0">None</option>
+      <option value="8" selected>8px</option>
+      <option value="16">16px</option>
+      <option value="32">32px</option>
+    </select>
+  </div>
+  <div class="divider"></div>
+  <div class="control-group">
+    <label>Quality</label>
+    <select id="quality">
+      <option value="0.95" selected>High (95%)</option>
+      <option value="1.0">Maximum (100%)</option>
+      <option value="0.80">Medium (80%)</option>
+    </select>
+  </div>
+</div>
+
+<button class="compose" id="compose-btn" disabled onclick="compose()">Compose Sheet</button>
+
+<div class="preview-area" id="preview-area">
+  <div class="preview-label">Preview</div>
+  <img class="preview-img" id="preview-img" alt="Composed sheet">
+  <button class="download-btn" onclick="download()">↓ Download JPEG</button>
+</div>
+
+<canvas id="canvas" style="display:none"></canvas>
+
+<script>
+  let images = { recto: null, verso: null };
+  let outputDataUrl = null;
+
+  function setupDrop(zoneId, fileId, key) {
+    const zone = document.getElementById(zoneId);
+    const input = document.getElementById(fileId);
+
+    input.addEventListener('change', e => {
+      if (e.target.files[0]) loadImage(e.target.files[0], key, zone);
+    });
+
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = '#f5f0e8'; });
+    zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.style.borderColor = '';
+      const file = e.dataTransfer.files[0];
+      if (file && file.type.startsWith('image/')) loadImage(file, key, zone);
+    });
+  }
+
+  function loadImage(file, key, zone) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        images[key] = img;
+        // show preview in zone
+        let existing = zone.querySelector('img');
+        if (!existing) { existing = document.createElement('img'); zone.prepend(existing); }
+        existing.src = e.target.result;
+        zone.classList.add('has-image');
+        checkReady();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function checkReady() {
+    document.getElementById('compose-btn').disabled = !(images.recto && images.verso);
+  }
+
+  function loadImageFromFile(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function drawAndExport() {
+    const layout = document.getElementById('layout').value;
+    const gap = parseInt(document.getElementById('gap').value);
+    const quality = parseFloat(document.getElementById('quality').value);
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const r = images.recto, v = images.verso;
+
+    let cw, ch, rx, ry, rw, rh, vx, vy, vw, vh;
+
+    if (layout === 'horizontal') {
+      const h = Math.max(r.height, v.height);
+      rh = h; rw = Math.round(r.width * (h / r.height));
+      vh = h; vw = Math.round(v.width * (h / v.height));
+      cw = rw + gap + vw; ch = h;
+      rx = 0; ry = 0; vx = rw + gap; vy = 0;
+    } else {
+      const w = Math.max(r.width, v.width);
+      rw = w; rh = Math.round(r.height * (w / r.width));
+      vw = w; vh = Math.round(v.height * (w / v.width));
+      cw = w; ch = rh + gap + vh;
+      rx = 0; ry = 0; vx = 0; vy = rh + gap;
+    }
+
+    canvas.width = cw;
+    canvas.height = ch;
+
+    if (gap > 0) {
+      ctx.fillStyle = '#f5f0e8';
+      ctx.fillRect(0, 0, cw, ch);
+    }
+
+    ctx.drawImage(r, rx, ry, rw, rh);
+    ctx.drawImage(v, vx, vy, vw, vh);
+
+    // Show preview
+    const preview = document.getElementById('preview-img');
+    preview.src = canvas.toDataURL('image/jpeg', quality);
+    const area = document.getElementById('preview-area');
+    area.classList.add('visible');
+    area.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // Store quality for download
+    canvas._quality = quality;
+  }
+
+  function compose() { drawAndExport(); }
+
+  function download() {
+    const canvas = document.getElementById('canvas');
+    const preview = document.getElementById('preview-img');
+    if (!canvas.width) return;
+    const quality = canvas._quality || 0.95;
+
+    try {
+      canvas.toBlob(blob => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'recto-verso.jpg';
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+        } else {
+          const a = document.createElement('a');
+          a.href = preview.src;
+          a.download = 'recto-verso.jpg';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        }
+      }, 'image/jpeg', quality);
+    } catch(e) {
+      const a = document.createElement('a');
+      a.href = preview.src;
+      a.download = 'recto-verso.jpg';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+  }
+
+  setupDrop('drop-recto', 'file-recto', 'recto');
+  setupDrop('drop-verso', 'file-verso', 'verso');
+</script>
+</body>
+</html>
