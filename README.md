@@ -4,6 +4,8 @@ A minimal browser tool for composing two-sided document scans — front and back
 
 Drag and drop (or click to upload) two images, choose your layout, and export. No server, no upload, no dependencies. Everything runs locally in the browser.
 
+[**LIVE DEMO**](https://post-content.github.io/recto-verso/)
+
 ## Use
 
 1. Load the front (recto) image
