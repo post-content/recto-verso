@@ -29,7 +29,7 @@ Images are normalized to a common height (horizontal) or width (vertical) before
 - Runs entirely client-side — no data leaves your browser
 - Works with any image format the browser supports (JPEG, PNG, WEBP, HEIC on supported devices)
 - On mobile, long-press the preview to save directly to photos
-- Made with Claude
+- Made with [Claude](https://claude.ai/)
 
 ## License
 
